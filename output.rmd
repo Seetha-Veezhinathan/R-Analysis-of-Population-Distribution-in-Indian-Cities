@@ -1,0 +1,353 @@
+---
+output:
+  html_document: default
+---
+```{r setup,include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.width = 10,fig.height = 8)
+
+# Load the Libraries
+
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(highcharter)
+library(maps)
+library(scales)
+library(DT)
+
+# Input the CSV File
+
+cities_r2 <- read.csv("C:/Users/seeth/Desktop/IHLP Project/cities_r2.csv")
+
+```
+
+<center> <h1>Top 500 Indian Cities</h1> </center>
+
+```{r}
+
+by_state <- cities_r2 %>% group_by(state_name) %>% summarise(Total = n(), 
+  Population = sum(population_total), 
+  Male_Population = sum(population_male), 
+  Female_Population = sum(population_female), 
+  Male_Percent = Male_Population/Population * 100, 
+  Female_Percent = Female_Population/Population * 100, 
+  Graduates = sum(total_graduates), 
+  Male_Grads = sum(male_graduates), 
+  Female_Grads = sum(female_graduates), 
+  Grads_percent = Graduates/Population * 100, 
+  Male_Grads_Percent = Male_Grads/Male_Population * 100, 
+  Female_Grads_Percent = Female_Grads/Female_Population * 100)%>% arrange(desc(Total))
+
+```
+
+
+```{r}
+# Display States by number of cities in Top 500 - COLUMN VIEW
+
+hchart(by_state, type = "column" ,hcaes(x= state_name , y = Total , color = state_name)) %>%
+hc_title(text = "States by number of cities in Top 500") %>%
+hc_add_theme(hc_theme_google())
+
+
+# Display States by number of cities in Top 500 - TREEMAP VIEW
+hchart(by_state, type = "treemap" , hcaes(x= state_name , value = Total , color = Total))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "States by Number of Cities in Top 500")
+
+```
+
+
+```{r}
+
+# Display states by Total Population in Top 500 Cities - COLUMN VIEW
+
+hchart(by_state[order(-by_state$Population),],type = "column",hcaes(x= state_name , y = Population , color = state_name))%>%
+hc_title(text = "States by Total Population in Top 500") %>%
+hc_add_theme(hc_theme_google())
+
+# Display States by Total Population in Top 500 Cities- Treemap VIEW
+
+hchart(by_state,type = "treemap",hcaes(x= state_name , value = Population , color = Population))%>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "States by Total Population in Top 500") %>%
+hc_add_theme(hc_theme_google())
+
+
+# Display Top 10 States Population Distribution
+
+top_ten_states <- cities_r2[cities_r2$state_name %in% by_state[1:10,]$state_name,]
+
+highchart() %>%
+hc_add_series_boxplot(top_ten_states$population_total, by = top_ten_states$state_name,name = "Total Population" , color = "purple") %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%  
+hc_title(text = "Top 10 States Population Distribution") %>%
+hc_add_theme(hc_theme_google())
+```
+
+
+```{r}
+
+# Display States by High Male Population Percentage
+
+hchart(by_state, type = "treemap" , hcaes(x= state_name , value = Male_Percent , color = Male_Percent))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "States by Male Population Percentage")
+
+# Display States by High Female Population Percentage
+
+hchart(by_state, type = "treemap" , hcaes(x= state_name , value = Female_Percent , color = Female_Percent))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "States by Female Population Percentage")
+
+
+
+```
+
+```{r}
+
+# Display States by Total Graduate Percentage in Enitre Population
+
+hchart(by_state, type = "treemap" , hcaes(x= state_name , value = Grads_percent , color = Grads_percent))%>%
+hc_add_theme(hc_theme_538()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "States by Total Graduates Percentage in Entire Population")
+
+# Display States by Male Graduate Percentage in Male Population
+
+hchart(by_state, type = "treemap" , hcaes(x= state_name , value = Male_Grads_Percent , color = Male_Grads_Percent))%>%
+hc_add_theme(hc_theme_538()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "States by Male Graduates Percentage in Male Population")
+
+# Display States by Female Graduate Percentage in Female Population
+
+hchart(by_state, type = "treemap" , hcaes(x= state_name , value = Female_Grads_Percent , color = Female_Grads_Percent))%>%
+hc_add_theme(hc_theme_538()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "States by Female Graduates Percentage in Female Population")
+
+```
+
+```{r}
+
+# Finding Top 50 Cities of the Country
+
+top50_cities <-cities_r2[order(-cities_r2$population_total),]
+
+top50_cities <- top50_cities[1:50,]
+
+by_top50_cities <- cities_r2[cities_r2$name_of_city %in% top50_cities$name_of_city,] %>%
+group_by(name_of_city) %>% 
+summarise(Total = n(), 
+Population = sum(population_total), 
+Male_Population = sum(population_male), 
+Female_Population = sum(population_female), 
+Male_Percent = Male_Population/Population * 100, 
+Female_Percent = Female_Population/Population * 100, 
+Graduates = sum(total_graduates), 
+Male_Grads = sum(male_graduates), 
+Female_Grads = sum(female_graduates), 
+Grads_percent = Graduates/Population * 100, 
+Male_Grads_Percent = Male_Grads/Male_Population * 100, 
+Female_Grads_Percent = Female_Grads/Female_Population * 100)%>% arrange(desc(Total))
+
+# Display Top 50 Cities by Population
+
+hchart(by_top50_cities, type = "treemap" , hcaes(x= name_of_city , value = Population, color = Population ))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "Top 50 Cities by Population")
+
+# Display Male Population Percentage in Top 50 Cities
+
+hchart(by_top50_cities, type = "treemap" , hcaes(x= name_of_city , value = Male_Percent, color = Male_Percent ))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "Male Population Percentage in Top 50 Cities")
+
+# Display Female Population Percentage in Top 50 Cities
+
+hchart(by_top50_cities, type = "treemap" , hcaes(x= name_of_city , value = Female_Percent, color = Female_Percent ))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "Female Population Percentage in Top 50 Cities")
+
+
+```
+
+```{r}
+
+# Display Total Graduate Percentage in Top 50 Cities
+
+hchart(by_top50_cities, type = "treemap" , hcaes(x= name_of_city , value = Grads_percent, color = Grads_percent ))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "Total Graduates Percentage in Entire Population of Top 50 Cities")
+
+```
+
+```{r}
+
+# Display Male Graduate Percentage in Top 50 Cities
+
+hchart(by_top50_cities, type = "treemap" , hcaes(x= name_of_city , value = Male_Grads_Percent, color = Male_Grads_Percent ))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "Male Graduates Percentage in Male Population of Top 50 Cities")
+
+```
+
+```{r}
+
+# Display Female Graduate Percentage in Top 50 Cities
+
+hchart(by_top50_cities, type = "treemap" , hcaes(x= name_of_city , value = Female_Grads_Percent, color = Female_Grads_Percent ))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "Female Graduates Percentage in Female Population of Top 50 Cities")
+
+```
+
+```{r}
+
+# Display Male Literacy rate versus Female Literacy Rate
+
+hchart(cities_r2, type = "scatter" , hcaes(x= effective_literacy_rate_male , y = effective_literacy_rate_female, group = state_name ))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "Male Literacy rate versus Female Literacy Rate")
+
+```
+
+```{r}
+
+# Display Male Graduate rate versus Female Graduate Rate
+
+hchart(by_state, type = "scatter" , hcaes(x= Male_Grads_Percent , y = Female_Grads_Percent, group = state_name ))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "Male Graduate rate versus Female Graduate Rate")
+
+```
+
+```{r}
+
+# Display Male Population rate versus Female Population Rate
+
+hchart(by_state, type = "scatter" , hcaes(x= Male_Percent , y = Female_Percent, group = state_name ))%>%
+hc_add_theme(hc_theme_google()) %>%
+hc_credits(enabled = TRUE, text = "Sources: Census India 2011", style = list(fontSize = "10px")) %>%
+hc_title(text = "Male Population rate versus Female Population Rate")
+
+```
+
+```{r}
+
+Diff_Child_Population <- cities_r2 %>% 
+group_by(state_name) %>% 
+summarise(Avg_Child_Population_Male = mean(X0.6_population_male), 
+Avg_Child_Population_Female = mean(X0.6_population_female)) %>% 
+mutate(Diff = (Avg_Child_Population_Male - Avg_Child_Population_Female))
+
+# Display difference in Male and Female Kids
+
+hchart(Diff_Child_Population,type = "column", hcaes(x = state_name, y = Diff,  color = state_name)) %>%
+hc_title(text = "Difference in Average Number of Male and Female Kids (Age Group 0-6)") %>%
+hc_subtitle(text = "Is this naturally possible or man made disaster?") %>%
+hc_add_theme(hc_theme_google())
+
+```
+
+```{r}
+
+Diff_Avg_Effective_Literacy_Rate <- cities_r2 %>% 
+group_by(state_name) %>% 
+summarise(Avg_Effective_Literacy_Rate_Male = mean(effective_literacy_rate_male), 
+Avg_Effective_Literacy_Rate_Female = mean(effective_literacy_rate_female)) %>% 
+mutate(Diff = (Avg_Effective_Literacy_Rate_Male - Avg_Effective_Literacy_Rate_Female))
+
+# Display difference in Male and Female Literacy Rates
+
+hchart(Diff_Avg_Effective_Literacy_Rate,type = "column", hcaes(x = state_name, y = Diff,  color = state_name)) %>%
+hc_title(text = "Difference in Average Effective Literacy Rate of Male and Female") %>%
+hc_subtitle(text = "Male Literacy Rate is higher in all the states") %>%
+hc_add_theme(hc_theme_google())
+
+```
+
+```{r}
+
+Diff_Avg_graduates <- cities_r2 %>% 
+group_by(state_name) %>% 
+summarise(Avg_Graduates_Male = mean(male_graduates), 
+Avg_Graduates_Female = mean(female_graduates)) %>% 
+mutate(Diff = (Avg_Graduates_Male - Avg_Graduates_Female))
+
+# Display difference in Male and Female Literacy Rates
+
+hchart(Diff_Avg_graduates,type = "column", hcaes(x = state_name, y = Diff,  color = state_name)) %>%
+hc_title(text = "Difference in Average Number of Male and Female Graduates") %>%
+hc_subtitle(text = "Only Kerala has more Women Graduates than Male Graduates") %>%
+hc_add_theme(hc_theme_google())
+
+```
+
+```{r}
+
+fivenum(cities_r2$population_total)
+quantile(cities_r2$population_total)
+quantile(cities_r2$population_total)[5]/quantile(cities_r2$population_total)[1]
+
+# Display Total Population Distribution in Top 500 Cities
+
+hchart(cities_r2$population_total, color = "purple") %>%
+hc_title(text = "Distirbution of the Total Population in Top 500 Cities") %>%
+hc_subtitle(text = "75% of the 500 Cities have less than 350K Population") %>%
+hc_add_theme(hc_theme_google())
+
+```
+
+# 75% of the 500 Cities have less than 350K Population
+# Biggest city in Top 500 in terms of population is 124 times the smallest one.
+
+```{r}
+
+fivenum(cities_r2$X0.6_population_total)
+quantile(cities_r2$X0.6_population_total)
+quantile(cities_r2$X0.6_population_total)[5]/quantile(cities_r2$X0.6_population_total)[1]
+
+# Display Total Population Distribution (0-6) Age Group in Top 500 Cities
+
+hchart(cities_r2$X0.6_population_total , color = "darkred") %>%
+hc_title(text = "Distirbution of the Total Population (0-6 Age Group) in Top 500 Cities") %>%
+hc_subtitle(text = "75% of the 500 Cities have less than 38K Population(0-6 Age Group") %>%
+hc_add_theme(hc_theme_google())
+
+```
+
+# 75% of the 500 Cities have less than 38K Population
+# Biggest city in Top 500 in terms of population(0-6 age group) is 184 times the  smallest one.
+
+```{r}
+
+fivenum(cities_r2$literates_total)
+quantile(cities_r2$literates_total)
+quantile(cities_r2$literates_total)[5]/quantile(cities_r2$literates_total)[1]
+
+# Display Distribution of Total Literates in Top 500 Cities
+
+hchart(cities_r2$X0.6_population_total , color = "darkgreen") %>%
+hc_title(text = "Distirbution of the Total Literates in Top 500 Cities") %>%
+hc_subtitle(text = "75% of the 500 Cities have less than 275K Literates") %>%
+hc_add_theme(hc_theme_google())
+
+```
+
+# 75% of the 500 Cities have less than 275K Literates
+# Biggest city in Top 500 in terms of Number of Literates is 180 times the smallest one.
+
+```{r}
+```
